@@ -41,7 +41,17 @@ const authenticateToken = async (req, res, next) => {
     }
     
     if (error.name === 'TokenExpiredError') {
-      return res.status(401).
-meganmya@Megans-MBP riverry-workflow %
+      return res.status(401).json({
+        success: false,
+        message: 'Token expired'
+      });
+    }
 
+    return res.status(500).json({
+      success: false,
+      message: 'Token verification failed'
+    });
+  }
+};
 
+module.exports = { authenticateToken };
