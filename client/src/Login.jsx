@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
 
 const Login = () => {
@@ -7,7 +6,6 @@ const Login = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
-  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -17,24 +15,13 @@ const Login = () => {
     const result = await login(credentials);
     
     if (result.success) {
-      // Redirect based on user role
-      switch(result.user.role) {
-        case 'master':
-          navigate('/master');
-          break;
-        case 'admin':
-          navigate('/admin');
-          break;
-        case 'editor':
-          navigate('/editor');
-          break;
-        case 'revisor':
-          navigate('/revisor');
-          break;
-        case 'artist':
-        default:
-          navigate('/artist');
-          break;
+      // For now, just redirect based on role
+      if (result.user.role === 'artist') {
+        window.location.href = '/artist';
+      } else if (result.user.role === 'master') {
+        window.location.href = '/master';
+      } else {
+        window.location.href = '/admin';
       }
     } else {
       setError(result.message);
@@ -54,7 +41,13 @@ const Login = () => {
     
     const result = await login(demoCredentials[role]);
     if (result.success) {
-      navigate(`/${role}`);
+      if (role === 'artist') {
+        window.location.href = '/artist';
+      } else if (role === 'master') {
+        window.location.href = '/master';
+      } else {
+        window.location.href = '/admin';
+      }
     }
   };
 
