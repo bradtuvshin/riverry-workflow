@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './hooks/useAuth';
 import Login from './Login';
 import ArtistPortal from './components/portals/ArtistPortal';
 import MasterPortal from './components/portals/MasterPortal';
+import AdminPortal from './components/portals/AdminPortal';
 
 // Simple Router Component
 const SimpleRouter = () => {
@@ -51,9 +52,25 @@ const SimpleRouter = () => {
       return null;
       
     case '/admin':
+      if (user.role === 'admin') {
+        return <AdminPortal />;
+      }
+      // If not admin, redirect to appropriate portal
+      window.location.href = user.role === 'master' ? '/master' : '/artist';
+      return null;
+      
+    case '/editor':
       return (
         <div className="p-8 text-center">
-          <h1 className="text-2xl font-bold mb-4">Admin Portal</h1>
+          <h1 className="text-2xl font-bold mb-4">Editor Portal</h1>
+          <p>Coming soon...</p>
+        </div>
+      );
+      
+    case '/revisor':
+      return (
+        <div className="p-8 text-center">
+          <h1 className="text-2xl font-bold mb-4">Revisor Portal</h1>
           <p>Coming soon...</p>
         </div>
       );
@@ -64,8 +81,10 @@ const SimpleRouter = () => {
         window.location.href = '/master';
       } else if (user.role === 'artist') {
         window.location.href = '/artist';
-      } else {
+      } else if (user.role === 'admin') {
         window.location.href = '/admin';
+      } else {
+        window.location.href = '/artist';
       }
       return null;
   }
