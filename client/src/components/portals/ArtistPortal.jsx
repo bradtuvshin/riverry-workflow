@@ -5,26 +5,21 @@ import {
   Calendar, 
   DollarSign, 
   CheckCircle, 
-  AlertTriangle,
   Eye,
   Star
 } from 'lucide-react';
 import { tasksAPI } from '../../services/api';
 import { useAuth } from '../../hooks/useAuth';
-import { TASK_STATUS, STATUS_COLORS } from '../../utils/constants';
 
 const ArtistPortal = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [currentPage, setCurrentPage] = useState(1);
+  const [activeTab, setActiveTab] = useState('pending');
 
   const { data: tasksData, isLoading, error } = useQuery({
-    queryKey: ['artist-tasks', statusFilter, currentPage],
+    queryKey: ['artist-tasks', activeTab],
     queryFn: () => tasksAPI.getArtistTasks({ 
-      status: statusFilter === 'all' ? undefined : statusFilter,
-      page: currentPage,
-      limit: 10
+      status: getStatusForTab(activeTab)
     })
   });
 
@@ -38,29 +33,27 @@ const ArtistPortal = () => {
   const tasks = tasksData?.data?.tasks || [];
   const stats = tasksData?.data?.stats || {};
 
+  // Map tabs to actual task statuses
+  function getStatusForTab(tab) {
+    switch(tab) {
+      case 'pending': return ['pending', 'assigned', 'in_progress'];
+      case 'submitted': return ['submitted'];
+      case 'paid': return ['completed'];
+      default: return [];
+    }
+  }
+
   const calculateEarnings = () => {
-    const completed = tasks.filter(t => t.status === TASK_STATUS.COMPLETED);
-    const pending = tasks.filter(t => [TASK_STATUS.SUBMITTED, TASK_STATUS.IN_PROGRESS].includes(t.status));
+    const paidTasks = tasks.filter(t => t.status === 'completed');
+    const submittedTasks = tasks.filter(t => t.status === 'submitted');
     
-    const completedEarnings = completed.reduce((sum, task) => sum + task.payRate, 0);
-    const pendingEarnings = pending.reduce((sum, task) => sum + task.payRate, 0);
+    const paidEarnings = paidTasks.reduce((sum, task) => sum + task.payRate, 0);
+    const pendingEarnings = submittedTasks.reduce((sum, task) => sum + task.payRate, 0);
     
-    return { completedEarnings, pendingEarnings };
+    return { paidEarnings, pendingEarnings };
   };
 
-  const { completedEarnings, pendingEarnings } = calculateEarnings();
-
-  const formatDueDate = (dateString) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffTime = date - now;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays < 0) return `${Math.abs(diffDays)} days overdue`;
-    if (diffDays === 0) return 'Due today';
-    if (diffDays === 1) return 'Due tomorrow';
-    return `${diffDays} days left`;
-  };
+  const { paidEarnings, pendingEarnings } = calculateEarnings();
 
   const handleSubmitTask = async (taskId) => {
     try {
@@ -75,23 +68,11 @@ const ArtistPortal = () => {
       <div className="p-6 max-w-7xl mx-auto">
         <div className="animate-pulse space-y-6">
           <div className="h-8 bg-gray-200 rounded w-1/3"></div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            {[...Array(4)].map((_, i) => (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[...Array(3)].map((_, i) => (
               <div key={i} className="h-24 bg-gray-200 rounded-lg"></div>
             ))}
           </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="p-6 max-w-7xl mx-auto">
-        <div className="card p-6 text-center">
-          <AlertTriangle className="w-12 h-12 text-danger-500 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Error Loading Tasks</h3>
-          <p className="text-gray-600">{error.message}</p>
         </div>
       </div>
     );
@@ -108,21 +89,23 @@ const ArtistPortal = () => {
             )}
           </h1>
           <p className="text-gray-600 mt-1">
-            {user?.artistInfo?.isGoldArtist ? 'Gold Artist' : 'Artist'} • 
-            {stats.total || 0} active tasks
+            {user?.artistInfo?.isGoldArtist ? 'Gold Artist' : 'Artist'}
           </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="card p-6">
           <div className="flex items-center">
             <div className="p-2 bg-blue-100 rounded-lg">
               <Clock className="w-6 h-6 text-blue-600" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">In Progress</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.in_progress || 0}</p>
+              <p className="text-sm font-medium text-gray-600">Pending Tasks</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {(stats.pending || 0) + (stats.assigned || 0) + (stats.in_progress || 0)}
+              </p>
             </div>
           </div>
         </div>
@@ -135,18 +118,9 @@ const ArtistPortal = () => {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Submitted</p>
               <p className="text-2xl font-bold text-gray-900">{stats.submitted || 0}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="card p-6">
-          <div className="flex items-center">
-            <div className="p-2 bg-success-100 rounded-lg">
-              <CheckCircle className="w-6 h-6 text-success-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Completed</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.completed || 0}</p>
+              <p className="text-xs text-gray-500">
+                ${pendingEarnings.toFixed(0)} pending
+              </p>
             </div>
           </div>
         </div>
@@ -157,43 +131,39 @@ const ArtistPortal = () => {
               <DollarSign className="w-6 h-6 text-green-600" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Earnings</p>
+              <p className="text-sm font-medium text-gray-600">Paid Earnings</p>
               <p className="text-2xl font-bold text-gray-900">
-                ${completedEarnings.toFixed(0)}
+                ${paidEarnings.toFixed(0)}
               </p>
               <p className="text-xs text-gray-500">
-                +${pendingEarnings.toFixed(0)} pending
+                {stats.completed || 0} completed tasks
               </p>
             </div>
           </div>
         </div>
       </div>
 
+      {/* Tabs */}
       <div className="card p-4">
-        <div className="flex flex-wrap gap-2">
+        <div className="flex space-x-1">
           {[
-            { key: 'all', label: 'All Tasks' },
-            { key: TASK_STATUS.ASSIGNED, label: 'Assigned' },
-            { key: TASK_STATUS.IN_PROGRESS, label: 'In Progress' },
-            { key: TASK_STATUS.SUBMITTED, label: 'Submitted' },
-            { key: TASK_STATUS.COMPLETED, label: 'Completed' }
-          ].map(({ key, label }) => (
+            { key: 'pending', label: 'Pending', count: (stats.pending || 0) + (stats.assigned || 0) + (stats.in_progress || 0) },
+            { key: 'submitted', label: 'Submitted', count: stats.submitted || 0 },
+            { key: 'paid', label: 'Paid', count: stats.completed || 0 }
+          ].map(({ key, label, count }) => (
             <button
               key={key}
-              onClick={() => {
-                setStatusFilter(key);
-                setCurrentPage(1);
-              }}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                statusFilter === key
+              onClick={() => setActiveTab(key)}
+              className={`px-6 py-3 rounded-lg text-sm font-medium transition-colors ${
+                activeTab === key
                   ? 'bg-primary-600 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
               {label}
-              {key !== 'all' && stats[key] > 0 && (
+              {count > 0 && (
                 <span className="ml-2 px-2 py-0.5 bg-white bg-opacity-20 rounded-full text-xs">
-                  {stats[key]}
+                  {count}
                 </span>
               )}
             </button>
@@ -201,16 +171,16 @@ const ArtistPortal = () => {
         </div>
       </div>
 
+      {/* Tasks List */}
       <div className="space-y-4">
         {tasks.length === 0 ? (
           <div className="card p-8 text-center">
             <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">No tasks found</h3>
             <p className="text-gray-600">
-              {statusFilter === 'all' 
-                ? "You don't have any tasks assigned yet."
-                : `No tasks with status "${statusFilter}".`
-              }
+              {activeTab === 'pending' && "No pending tasks assigned yet."}
+              {activeTab === 'submitted' && "No tasks submitted for review."}
+              {activeTab === 'paid' && "No completed tasks paid yet."}
             </p>
           </div>
         ) : (
@@ -218,9 +188,9 @@ const ArtistPortal = () => {
             <TaskCard 
               key={task._id} 
               task={task} 
+              activeTab={activeTab}
               onSubmit={handleSubmitTask}
               submitting={submitTaskMutation.isLoading}
-              formatDueDate={formatDueDate}
             />
           ))
         )}
@@ -229,10 +199,22 @@ const ArtistPortal = () => {
   );
 };
 
-const TaskCard = ({ task, onSubmit, submitting, formatDueDate }) => {
-  const statusColor = STATUS_COLORS[task.status] || 'gray';
-  
-  const canSubmit = task.status === TASK_STATUS.IN_PROGRESS;
+const TaskCard = ({ task, activeTab, onSubmit, submitting }) => {
+  const getStatusBadge = () => {
+    if (task.status === 'completed') return 'badge-success';
+    if (task.status === 'submitted') return 'badge-warning';
+    return 'badge-gray';
+  };
+
+  const getStatusText = () => {
+    if (task.status === 'completed') return 'Paid';
+    if (task.status === 'submitted') return 'Submitted';
+    if (task.status === 'in_progress') return 'In Progress';
+    if (task.status === 'assigned') return 'Assigned';
+    return 'Pending';
+  };
+
+  const canSubmit = task.status === 'in_progress' && activeTab === 'pending';
 
   return (
     <div className="card p-6 hover:shadow-lg transition-shadow">
@@ -246,12 +228,12 @@ const TaskCard = ({ task, onSubmit, submitting, formatDueDate }) => {
               <div className="flex items-center space-x-4 text-sm text-gray-600">
                 <span>Task ID: {task.taskId}</span>
                 <span>•</span>
-                <span className="capitalize">{task.paintingStyle.replace('_', ' ')}</span>
+                <span className="capitalize">{task.paintingStyle?.replace('_', ' ')}</span>
               </div>
             </div>
             
-            <span className={`badge badge-${statusColor} capitalize`}>
-              {task.status.replace('_', ' ')}
+            <span className={`badge ${getStatusBadge()}`}>
+              {getStatusText()}
             </span>
           </div>
 
@@ -265,7 +247,7 @@ const TaskCard = ({ task, onSubmit, submitting, formatDueDate }) => {
               <div>
                 <p className="text-xs text-gray-500">Due Date</p>
                 <p className="text-sm font-medium text-gray-900">
-                  {formatDueDate(task.dueDate)}
+                  {new Date(task.dueDate).toLocaleDateString()}
                 </p>
               </div>
             </div>
@@ -312,7 +294,7 @@ const TaskCard = ({ task, onSubmit, submitting, formatDueDate }) => {
             </button>
           )}
           
-          {task.status === TASK_STATUS.ASSIGNED && (
+          {task.status === 'assigned' && (
             <button
               onClick={() => {/* Handle start task */}}
               className="btn btn-primary inline-flex items-center"
