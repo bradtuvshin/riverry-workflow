@@ -15,7 +15,9 @@ import {
   ChevronRight,
   X,
   Package,
-  Palette
+  Palette,
+  Upload,
+  FileText
 } from 'lucide-react';
 import { tasksAPI } from '../../services/api';
 import { useAuth } from '../../hooks/useAuth';
@@ -34,7 +36,7 @@ const ArtistPortal = () => {
       orderId: '344663465',
       status: 'pending',
       totalPayout: 45,
-      dueDate: '2025-07-05',
+      dueDate: '2025-07-05T15:30:00Z',
       customerName: 'Sarah Johnson',
       taskCount: 3,
       priority: 'normal',
@@ -43,28 +45,28 @@ const ArtistPortal = () => {
           taskId: '344663465-1',
           title: 'Pet Headshot Portrait',
           paintingStyle: 'Regular Headshot',
-          sku: 'Regular_headshot_12x16p',
           payRate: 10,
           status: 'assigned',
-          description: '12x16 poster of golden retriever'
+          customerComments: 'Please make sure his eyes are blue and don\'t paint the collar. Focus on the happy expression!',
+          uploadedFile: null
         },
         {
           taskId: '344663465-2', 
           title: 'Pet Mini Full Body',
-          paintingStyle: '2 Pet Mini Full Body',
-          sku: '2pet_mini_fullbody_5x7nw',
+          paintingStyle: '2 Pet Mini Full Body w/ Background',
           payRate: 10,
           status: 'assigned',
-          description: '5x7 natural wood frame with 2 cats'
+          customerComments: 'Both cats should be sitting. The orange one on the left, gray one on the right. Include the garden background.',
+          uploadedFile: null
         },
         {
           taskId: '344663465-3',
           title: 'House + Landscape + Pets',
           paintingStyle: 'House + Landscape + 3 Pets',
-          sku: 'house+landscape+3pets_8x10bf',
           payRate: 25,
-          status: 'assigned',
-          description: '8x10 black frame with house, garden, and 3 dogs'
+          status: 'in_progress',
+          customerComments: 'Please include all 3 dogs in front of the house. Make sure the red brick chimney is visible. Dogs should look happy and playful.',
+          uploadedFile: null
         }
       ]
     },
@@ -72,7 +74,7 @@ const ArtistPortal = () => {
       orderId: '344663466',
       status: 'submitted',
       totalPayout: 35,
-      dueDate: '2025-07-03',
+      dueDate: '2025-07-03T18:00:00Z',
       customerName: 'Mike Chen',
       taskCount: 2,
       priority: 'urgent',
@@ -81,19 +83,19 @@ const ArtistPortal = () => {
           taskId: '344663466-1',
           title: 'Wedding Portrait',
           paintingStyle: 'Couple Portrait',
-          sku: 'couple_portrait_16x20p',
           payRate: 20,
           status: 'submitted',
-          description: '16x20 poster of wedding couple'
+          customerComments: 'Please capture the joy in their faces. The bride is wearing a pearl necklace - make sure it\'s visible.',
+          uploadedFile: 'wedding_portrait.tiff'
         },
         {
           taskId: '344663466-2',
           title: 'Pet Memorial',
           paintingStyle: 'Pet Memorial',
-          sku: 'pet_memorial_8x10bf',
           payRate: 15,
           status: 'submitted',
-          description: '8x10 black frame memorial portrait'
+          customerComments: 'This is for our beloved dog who passed away. Please make him look peaceful and happy. Include the rainbow in the background.',
+          uploadedFile: 'pet_memorial.tiff'
         }
       ]
     },
@@ -101,7 +103,7 @@ const ArtistPortal = () => {
       orderId: '344663467',
       status: 'completed',
       totalPayout: 20,
-      dueDate: '2025-06-28',
+      dueDate: '2025-06-28T12:00:00Z',
       customerName: 'Lisa Park',
       taskCount: 1,
       priority: 'normal',
@@ -110,10 +112,10 @@ const ArtistPortal = () => {
           taskId: '344663467-1',
           title: 'Family Portrait',
           paintingStyle: 'Family Portrait',
-          sku: 'family_portrait_11x14f',
           payRate: 20,
           status: 'completed',
-          description: '11x14 framed family of 4'
+          customerComments: 'Family of 4 with 2 young kids. Please make the kids look well-behaved and happy!',
+          uploadedFile: 'family_portrait.tiff'
         }
       ]
     }
@@ -163,6 +165,26 @@ const ArtistPortal = () => {
       default: 
         return [];
     }
+  };
+
+  // Calculate time remaining
+  const getTimeRemaining = (dueDate) => {
+    const now = new Date();
+    const due = new Date(dueDate);
+    const diff = due - now;
+    
+    if (diff <= 0) return { expired: true, text: 'OVERDUE', hours: 0, minutes: 0 };
+    
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    
+    return { 
+      expired: false, 
+      text: `${hours}h ${minutes}m left`,
+      hours,
+      minutes,
+      totalHours: hours + (minutes / 60)
+    };
   };
 
   // Calculate earnings and stats
@@ -357,9 +379,9 @@ const ArtistPortal = () => {
           </div>
         </div>
 
-        {/* Enhanced Tabs */}
+        {/* Enhanced Tabs - Responsive */}
         <div className={`${themeClasses.cardBg} ${themeClasses.border} border rounded-lg p-4`}>
-          <div className="flex space-x-2">
+          <div className="flex flex-col sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0">
             {[
               { key: 'pending', label: 'Pending', count: stats.pendingCount, color: 'blue' },
               { key: 'submitted', label: 'Submitted', count: stats.submittedCount, color: 'orange' },
@@ -368,7 +390,7 @@ const ArtistPortal = () => {
               <button
                 key={key}
                 onClick={() => setActiveTab(key)}
-                className={`px-6 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
+                className={`flex-1 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
                   activeTab === key
                     ? `bg-${color}-600 text-black shadow-lg`
                     : darkMode 
@@ -376,7 +398,7 @@ const ArtistPortal = () => {
                       : `bg-${color}-50 text-${color}-700 hover:bg-${color}-100`
                 }`}
               >
-                <span>{label}</span>
+                <span className="block sm:inline">{label}</span>
                 <span className={`ml-2 px-2 py-1 rounded-full text-xs font-bold ${
                   activeTab === key 
                     ? 'bg-white bg-opacity-25' 
@@ -412,6 +434,7 @@ const ArtistPortal = () => {
                 onOrderClick={handleOrderClick}
                 darkMode={darkMode}
                 themeClasses={themeClasses}
+                getTimeRemaining={getTimeRemaining}
               />
             ))
           )}
@@ -428,12 +451,13 @@ const ArtistPortal = () => {
         onSubmitOrder={handleSubmitOrder}
         darkMode={darkMode}
         themeClasses={themeClasses}
+        getTimeRemaining={getTimeRemaining}
       />
     </div>
   );
 };
 
-const OrderCard = ({ order, activeTab, onOrderClick, darkMode, themeClasses }) => {
+const OrderCard = ({ order, activeTab, onOrderClick, darkMode, themeClasses, getTimeRemaining }) => {
   const getStatusBadge = () => {
     if (order.status === 'completed') return 'bg-green-100 text-green-800';
     if (order.status === 'submitted') return 'bg-yellow-100 text-yellow-800';
@@ -452,15 +476,18 @@ const OrderCard = ({ order, activeTab, onOrderClick, darkMode, themeClasses }) =
     return 'bg-gray-100 text-gray-800';
   };
 
-  const isOverdue = () => {
-    const dueDate = new Date(order.dueDate);
-    const now = new Date();
-    return now > dueDate && order.status === 'pending';
+  const timeRemaining = getTimeRemaining(order.dueDate);
+  
+  const getTimeRemainingColor = () => {
+    if (timeRemaining.expired) return 'text-red-600 font-bold';
+    if (timeRemaining.totalHours <= 6) return 'text-red-500 font-medium';
+    if (timeRemaining.totalHours <= 24) return 'text-yellow-600 font-medium';
+    return themeClasses.textPrimary;
   };
 
   return (
     <div 
-      className={`${themeClasses.cardBg} ${themeClasses.border} border rounded-lg p-6 hover:shadow-lg transition-all duration-200 cursor-pointer ${isOverdue() ? 'border-l-4 border-red-500' : ''}`}
+      className={`${themeClasses.cardBg} ${themeClasses.border} border rounded-lg p-6 hover:shadow-lg transition-all duration-200 cursor-pointer ${timeRemaining.expired ? 'border-l-4 border-red-500' : ''}`}
       onClick={() => onOrderClick(order)}
     >
       <div className="flex items-center justify-between">
@@ -469,7 +496,7 @@ const OrderCard = ({ order, activeTab, onOrderClick, darkMode, themeClasses }) =
             <div>
               <h3 className={`text-lg font-semibold ${themeClasses.textPrimary} mb-1`}>
                 Order #{order.orderId}
-                {isOverdue() && <span className="ml-2 text-red-500 text-sm">⚠️ Overdue</span>}
+                {timeRemaining.expired && <span className="ml-2 text-red-500 text-sm">⚠️ OVERDUE</span>}
               </h3>
               <p className={`${themeClasses.textSecondary} text-sm`}>
                 Customer: {order.customerName}
@@ -508,11 +535,14 @@ const OrderCard = ({ order, activeTab, onOrderClick, darkMode, themeClasses }) =
             </div>
             
             <div className="flex items-center space-x-2">
-              <Calendar className={`w-4 h-4 ${themeClasses.textMuted}`} />
+              <Clock className={`w-4 h-4 ${themeClasses.textMuted}`} />
               <div>
-                <p className={`text-xs ${themeClasses.textMuted}`}>Due Date</p>
-                <p className={`text-sm font-medium ${themeClasses.textPrimary}`}>
-                  {new Date(order.dueDate).toLocaleDateString()}
+                <p className={`text-xs ${themeClasses.textMuted}`}>Time Left</p>
+                <p className={`text-sm font-medium ${getTimeRemainingColor()}`}>
+                  {timeRemaining.text}
+                </p>
+                <p className={`text-xs ${themeClasses.textMuted}`}>
+                  Due: {new Date(order.dueDate).toLocaleString()}
                 </p>
               </div>
             </div>
@@ -527,11 +557,25 @@ const OrderCard = ({ order, activeTab, onOrderClick, darkMode, themeClasses }) =
   );
 };
 
-const TaskDrawer = ({ isOpen, onClose, order, onStartTask, onSubmitTask, onSubmitOrder, darkMode, themeClasses }) => {
+const TaskDrawer = ({ isOpen, onClose, order, onStartTask, onSubmitTask, onSubmitOrder, darkMode, themeClasses, getTimeRemaining }) => {
+  const [uploadingFiles, setUploadingFiles] = useState({});
+
   if (!isOpen || !order) return null;
 
   const allTasksCompleted = order.tasks.every(task => task.status === 'submitted' || task.status === 'completed');
   const canSubmitOrder = order.tasks.some(task => task.status === 'in_progress') && allTasksCompleted;
+
+  const handleFileUpload = (taskId, file) => {
+    setUploadingFiles(prev => ({ ...prev, [taskId]: true }));
+    
+    // Simulate file upload
+    setTimeout(() => {
+      setUploadingFiles(prev => ({ ...prev, [taskId]: false }));
+      console.log(`Uploaded file for task ${taskId}:`, file.name);
+    }, 2000);
+  };
+
+  const timeRemaining = getTimeRemaining(order.dueDate);
 
   return (
     <>
@@ -542,7 +586,7 @@ const TaskDrawer = ({ isOpen, onClose, order, onStartTask, onSubmitTask, onSubmi
       />
       
       {/* Drawer */}
-      <div className={`fixed right-0 top-0 h-full w-full max-w-2xl ${themeClasses.cardBg} shadow-2xl z-50 transform transition-transform duration-300 overflow-y-auto`}>
+      <div className={`fixed right-0 top-0 h-full w-full max-w-3xl ${themeClasses.cardBg} shadow-2xl z-50 transform transition-transform duration-300 overflow-y-auto`}>
         <div className="p-6">
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
@@ -568,7 +612,14 @@ const TaskDrawer = ({ isOpen, onClose, order, onStartTask, onSubmitTask, onSubmi
               <div>
                 <p className={`text-sm ${themeClasses.textMuted}`}>Due Date</p>
                 <p className={`font-medium ${themeClasses.textPrimary}`}>
-                  {new Date(order.dueDate).toLocaleDateString()}
+                  {new Date(order.dueDate).toLocaleString()}
+                </p>
+                <p className={`text-sm font-medium ${
+                  timeRemaining.expired ? 'text-red-600' : 
+                  timeRemaining.totalHours <= 6 ? 'text-red-500' :
+                  timeRemaining.totalHours <= 24 ? 'text-yellow-600' : 'text-green-600'
+                }`}>
+                  {timeRemaining.text}
                 </p>
               </div>
               <div>
@@ -581,26 +632,22 @@ const TaskDrawer = ({ isOpen, onClose, order, onStartTask, onSubmitTask, onSubmi
           </div>
 
           {/* Tasks List */}
-          <div className="space-y-4 mb-6">
+          <div className="space-y-6 mb-6">
             <h3 className={`text-lg font-semibold ${themeClasses.textPrimary}`}>
               Tasks ({order.taskCount})
             </h3>
             
             {order.tasks.map((task, index) => (
-              <div key={task.taskId} className={`${themeClasses.border} border rounded-lg p-4`}>
-                <div className="flex items-start justify-between mb-3">
+              <div key={task.taskId} className={`${themeClasses.border} border rounded-lg p-6`}>
+                <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
-                    <h4 className={`font-medium ${themeClasses.textPrimary} mb-1`}>
-                      Task #{index + 1}: {task.title}
+                    <h4 className={`font-medium ${themeClasses.textPrimary} mb-2`}>
+                      Task ID: {task.taskId}
                     </h4>
-                    <p className={`text-sm ${themeClasses.textSecondary} mb-2`}>
-                      {task.description}
-                    </p>
-                    <div className="flex items-center space-x-4 text-sm">
-                      <div className="flex items-center space-x-1">
-                        <Palette className={`w-4 h-4 ${themeClasses.textMuted}`} />
-                        <span className={themeClasses.textSecondary}>{task.paintingStyle}</span>
-                      </div>
+                    <h5 className={`text-lg font-semibold ${themeClasses.textPrimary} mb-2`}>
+                      {task.paintingStyle}
+                    </h5>
+                    <div className="flex items-center space-x-4 text-sm mb-4">
                       <div className="flex items-center space-x-1">
                         <DollarSign className={`w-4 h-4 ${themeClasses.textMuted}`} />
                         <span className={`font-medium ${themeClasses.textPrimary}`}>${task.payRate}</span>
@@ -609,7 +656,7 @@ const TaskDrawer = ({ isOpen, onClose, order, onStartTask, onSubmitTask, onSubmi
                   </div>
                   
                   <div className="ml-4 text-right">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${
                       task.status === 'completed' ? 'bg-green-100 text-green-800' :
                       task.status === 'submitted' ? 'bg-yellow-100 text-yellow-800' :
                       task.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
@@ -622,27 +669,87 @@ const TaskDrawer = ({ isOpen, onClose, order, onStartTask, onSubmitTask, onSubmi
                   </div>
                 </div>
 
-                <div className="flex space-x-2">
+                {/* Customer Comments */}
+                {task.customerComments && (
+                  <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="flex items-start space-x-2">
+                      <FileText className="w-5 h-5 text-blue-600 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium text-blue-800 mb-1">Customer Comments:</p>
+                        <p className="text-sm text-blue-700">{task.customerComments}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* File Upload Section */}
+                {(task.status === 'in_progress' || task.status === 'submitted') && (
+                  <div className="mb-4 p-4 border-2 border-dashed border-gray-300 rounded-lg">
+                    <div className="text-center">
+                      <Upload className={`w-8 h-8 ${themeClasses.textMuted} mx-auto mb-2`} />
+                      <p className={`text-sm ${themeClasses.textSecondary} mb-3`}>
+                        Upload your artwork for this task
+                      </p>
+                      
+                      {task.uploadedFile ? (
+                        <div className="flex items-center justify-center space-x-2 text-green-600">
+                          <CheckCircle className="w-4 h-4" />
+                          <span className="text-sm font-medium">Artwork uploaded</span>
+                        </div>
+                      ) : (
+                        <label className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer transition-colors">
+                          <Upload className="w-4 h-4 mr-2" />
+                          Choose File
+                          <input
+                            type="file"
+                            className="hidden"
+                            accept="image/*,.tiff,.tif"
+                            onChange={(e) => {
+                              if (e.target.files[0]) {
+                                handleFileUpload(task.taskId, e.target.files[0]);
+                              }
+                            }}
+                          />
+                        </label>
+                      )}
+                      
+                      {uploadingFiles[task.taskId] && (
+                        <div className="mt-2">
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div className="bg-blue-600 h-2 rounded-full animate-pulse" style={{ width: '60%' }}></div>
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1">Uploading...</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="flex flex-wrap gap-2">
                   {task.status === 'assigned' && (
                     <button
                       onClick={() => onStartTask(task.taskId)}
-                      className="btn btn-primary text-sm px-3 py-1"
+                      className="btn btn-primary text-sm px-4 py-2"
                     >
+                      <Clock className="w-4 h-4 mr-2" />
                       Start Work
                     </button>
                   )}
                   
-                  {task.status === 'in_progress' && (
+                  {task.status === 'in_progress' && task.uploadedFile && (
                     <button
                       onClick={() => onSubmitTask(task.taskId)}
-                      className="btn btn-success text-sm px-3 py-1"
+                      className="btn btn-success text-sm px-4 py-2"
                     >
+                      <CheckCircle className="w-4 h-4 mr-2" />
                       Submit Task
                     </button>
                   )}
                   
-                  <button className="btn btn-secondary text-sm px-3 py-1">
-                    View Details
+                  <button className="btn btn-secondary text-sm px-4 py-2">
+                    <Eye className="w-4 h-4 mr-2" />
+                    View Reference Photos
                   </button>
                 </div>
               </div>
