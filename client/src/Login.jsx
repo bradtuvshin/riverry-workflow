@@ -7,6 +7,11 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
 
+  const navigateTo = (path) => {
+    window.history.pushState({}, '', path);
+    window.location.reload(); // Simple refresh to trigger route change
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -15,13 +20,13 @@ const Login = () => {
     const result = await login(credentials);
     
     if (result.success) {
-      // For now, just redirect based on role
+      // Navigate based on role
       if (result.user.role === 'artist') {
-        window.location.href = '/artist';
+        navigateTo('/artist');
       } else if (result.user.role === 'master') {
-        window.location.href = '/master';
+        navigateTo('/master');
       } else {
-        window.location.href = '/admin';
+        navigateTo('/admin');
       }
     } else {
       setError(result.message);
@@ -31,24 +36,30 @@ const Login = () => {
   };
 
   const handleDemoLogin = async (role) => {
+    setLoading(true);
+    setError('');
+    
     const demoCredentials = {
       artist: { email: 'artist@riverry.com', password: 'demo123' },
       admin: { email: 'admin@riverry.com', password: 'demo123' },
       master: { email: 'master@riverry.com', password: 'demo123' }
     };
 
-    setCredentials(demoCredentials[role]);
-    
     const result = await login(demoCredentials[role]);
+    
     if (result.success) {
       if (role === 'artist') {
-        window.location.href = '/artist';
+        navigateTo('/artist');
       } else if (role === 'master') {
-        window.location.href = '/master';
+        navigateTo('/master');
       } else {
-        window.location.href = '/admin';
+        navigateTo('/admin');
       }
+    } else {
+      setError('Login failed');
     }
+    
+    setLoading(false);
   };
 
   return (
@@ -124,21 +135,24 @@ const Login = () => {
           <div className="mt-6 grid grid-cols-1 gap-3">
             <button
               onClick={() => handleDemoLogin('artist')}
-              className="w-full inline-flex justify-center py-3 px-4 border border-gray-300 rounded-lg bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+              disabled={loading}
+              className="w-full inline-flex justify-center py-3 px-4 border border-gray-300 rounded-lg bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
             >
-              Artist Demo
+              {loading ? 'Signing in...' : 'Artist Demo'}
             </button>
             <button
               onClick={() => handleDemoLogin('admin')}
-              className="w-full inline-flex justify-center py-3 px-4 border border-gray-300 rounded-lg bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+              disabled={loading}
+              className="w-full inline-flex justify-center py-3 px-4 border border-gray-300 rounded-lg bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
             >
-              Admin Demo
+              {loading ? 'Signing in...' : 'Admin Demo'}
             </button>
             <button
               onClick={() => handleDemoLogin('master')}
-              className="w-full inline-flex justify-center py-3 px-4 border border-purple-300 rounded-lg bg-purple-50 text-sm font-medium text-purple-700 hover:bg-purple-100"
+              disabled={loading}
+              className="w-full inline-flex justify-center py-3 px-4 border border-purple-300 rounded-lg bg-purple-50 text-sm font-medium text-purple-700 hover:bg-purple-100 disabled:opacity-50"
             >
-              👑 Master Demo
+              {loading ? 'Signing in...' : '👑 Master Demo'}
             </button>
           </div>
         </div>
