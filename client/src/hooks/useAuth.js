@@ -25,28 +25,7 @@ export function AuthProvider({ children }) {
         localStorage.setItem('token', data.data.token);
         localStorage.setItem('user', JSON.stringify(data.data.user));
         
-        // Role-based routing
-        const userRole = data.data.user.role;
-        switch(userRole) {
-          case 'master':
-            window.location.href = '/master';
-            break;
-          case 'admin':
-            window.location.href = '/admin';
-            break;
-          case 'editor':
-            window.location.href = '/editor';
-            break;
-          case 'revisor':
-            window.location.href = '/revisor';
-            break;
-          case 'artist':
-            window.location.href = '/artist';
-            break;
-          default:
-            window.location.href = '/artist';
-        }
-        
+        // Don't auto-redirect for now - let the app handle routing
         return { success: true, user: data.data.user };
       } else {
         return { success: false, message: data.message };
@@ -63,7 +42,6 @@ export function AuthProvider({ children }) {
     setUser(null);
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    window.location.href = '/login';
   };
   
   const hasRole = (requiredRole) => {
