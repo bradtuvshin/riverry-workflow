@@ -9,7 +9,9 @@ import {
   Star,
   Crown,
   TrendingUp,
-  Zap
+  Zap,
+  Moon,
+  Sun
 } from 'lucide-react';
 import { tasksAPI } from '../../services/api';
 import { useAuth } from '../../hooks/useAuth';
@@ -18,6 +20,7 @@ const ArtistPortal = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('pending');
+  const [darkMode, setDarkMode] = useState(false);
 
   const { data: tasksData, isLoading, error } = useQuery({
     queryKey: ['artist-tasks'],
@@ -141,15 +144,30 @@ const ArtistPortal = () => {
     }
   };
 
+  // Theme classes
+  const themeClasses = {
+    bg: darkMode ? 'bg-gray-900' : 'bg-gray-50',
+    cardBg: darkMode ? 'bg-gray-800' : 'bg-white',
+    textPrimary: darkMode ? 'text-white' : 'text-gray-900',
+    textSecondary: darkMode ? 'text-gray-300' : 'text-gray-600',
+    textMuted: darkMode ? 'text-gray-400' : 'text-gray-500',
+    border: darkMode ? 'border-gray-700' : 'border-gray-200',
+    gradientCard: darkMode 
+      ? 'from-gray-800 to-gray-700' 
+      : 'from-gray-50 to-gray-100'
+  };
+
   if (isLoading) {
     return (
-      <div className="p-6 max-w-7xl mx-auto">
-        <div className="animate-pulse space-y-6">
-          <div className="h-8 bg-gray-200 rounded w-1/3"></div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="h-24 bg-gray-200 rounded-lg"></div>
-            ))}
+      <div className={`min-h-screen ${themeClasses.bg} p-6`}>
+        <div className="max-w-7xl mx-auto">
+          <div className="animate-pulse space-y-6">
+            <div className="h-8 bg-gray-200 rounded w-1/3"></div>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="h-24 bg-gray-200 rounded-lg"></div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -163,177 +181,200 @@ const ArtistPortal = () => {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            Welcome back, {user?.firstName}!
-          </h1>
-          <p className="text-gray-600 mt-1">
-            Pay Period: {currentPeriod.start.toLocaleDateString()} - {currentPeriod.end.toLocaleDateString()}
-          </p>
+    <div className={`min-h-screen ${themeClasses.bg} transition-colors duration-300`}>
+      <div className="p-6 max-w-7xl mx-auto space-y-6">
+        {/* Header with Theme Toggle */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className={`text-3xl font-bold ${themeClasses.textPrimary}`}>
+              Welcome back, {user?.firstName}! 
+            </h1>
+            <p className={`${themeClasses.textSecondary} mt-1`}>
+              Pay Period: {currentPeriod.start.toLocaleDateString()} - {currentPeriod.end.toLocaleDateString()}
+            </p>
+          </div>
+          
+          {/* Theme Toggle */}
+          <button
+            onClick={() => setDarkMode(!darkMode)}
+            className={`mt-4 sm:mt-0 p-3 rounded-full ${themeClasses.cardBg} ${themeClasses.border} border hover:shadow-lg transition-all duration-200`}
+          >
+            {darkMode ? (
+              <Sun className={`w-5 h-5 ${themeClasses.textPrimary}`} />
+            ) : (
+              <Moon className={`w-5 h-5 ${themeClasses.textPrimary}`} />
+            )}
+          </button>
         </div>
-      </div>
 
-      {/* Artist Status Card */}
-      <div className="card p-6 bg-gradient-to-r from-gray-50 to-gray-100">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <div className={`p-3 rounded-full ${isGoldStatus ? 'bg-yellow-100' : 'bg-gray-200'}`}>
-              {isGoldStatus ? (
-                <Crown className="w-8 h-8 text-yellow-600" />
-              ) : (
-                <Star className="w-8 h-8 text-gray-600" />
-              )}
+        {/* Artist Status Card */}
+        <div className={`${themeClasses.cardBg} ${themeClasses.border} border rounded-lg p-6 bg-gradient-to-r ${themeClasses.gradientCard}`}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className={`p-3 rounded-full ${isGoldStatus ? 'bg-yellow-100' : darkMode ? 'bg-gray-700' : 'bg-gray-200'}`}>
+                {isGoldStatus ? (
+                  <Crown className="w-8 h-8 text-yellow-600" />
+                ) : (
+                  <Star className={`w-8 h-8 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`} />
+                )}
+              </div>
+              <div>
+                <h2 className={`text-xl font-bold ${isGoldStatus ? 'text-yellow-600' : themeClasses.textPrimary}`}>
+                  {isGoldStatus ? '👑 GOLD ARTIST' : '🥈 SILVER ARTIST'}
+                </h2>
+                <p className={themeClasses.textSecondary}>
+                  {onTimePercentage}% On-Time This Period
+                </p>
+              </div>
             </div>
-            <div>
-              <h2 className={`text-xl font-bold ${isGoldStatus ? 'text-yellow-600' : 'text-gray-700'}`}>
-                {isGoldStatus ? '👑 GOLD ARTIST' : '🥈 SILVER ARTIST'}
-              </h2>
-              <p className="text-gray-600">
-                {onTimePercentage}% On-Time This Period
-              </p>
+            
+            <div className="text-right">
+              <div className={`text-2xl font-bold ${isGoldStatus ? 'text-yellow-600' : themeClasses.textPrimary}`}>
+                {onTimePercentage}%
+              </div>
+              <div className={`text-sm ${themeClasses.textMuted}`}>
+                {isGoldStatus ? '+20% Bonus Eligible' : `${80 - onTimePercentage}% to Gold`}
+              </div>
             </div>
           </div>
           
-          <div className="text-right">
-            <div className={`text-2xl font-bold ${isGoldStatus ? 'text-yellow-600' : 'text-gray-600'}`}>
-              {onTimePercentage}%
+          {/* Progress Bar */}
+          <div className="mt-4">
+            <div className={`flex justify-between text-xs ${themeClasses.textMuted} mb-1`}>
+              <span>Silver (0%)</span>
+              <span>Gold (80%)</span>
             </div>
-            <div className="text-sm text-gray-500">
-              {isGoldStatus ? '+20% Bonus Eligible' : `${80 - onTimePercentage}% to Gold`}
+            <div className={`w-full ${darkMode ? 'bg-gray-700' : 'bg-gray-200'} rounded-full h-2`}>
+              <div 
+                className={`h-2 rounded-full transition-all duration-500 ${
+                  isGoldStatus ? 'bg-yellow-500' : darkMode ? 'bg-gray-500' : 'bg-gray-400'
+                }`}
+                style={{ width: `${Math.min(onTimePercentage, 100)}%` }}
+              ></div>
             </div>
           </div>
         </div>
-        
-        {/* Progress Bar */}
-        <div className="mt-4">
-          <div className="flex justify-between text-xs text-gray-500 mb-1">
-            <span>Silver (0%)</span>
-            <span>Gold (80%)</span>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div 
-              className={`h-2 rounded-full transition-all duration-500 ${
-                isGoldStatus ? 'bg-yellow-500' : 'bg-gray-400'
-              }`}
-              style={{ width: `${Math.min(onTimePercentage, 100)}%` }}
-            ></div>
-          </div>
-        </div>
-      </div>
 
-      {/* Earnings Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="card p-6 bg-gradient-to-br from-blue-50 to-blue-100">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-blue-700">This Pay Period</p>
-              <p className="text-2xl font-bold text-blue-900">
-                ${thisPeriodsEarnings.toFixed(0)}
-              </p>
-              {goldBonus > 0 && (
-                <p className="text-sm text-yellow-600 font-medium">
-                  <Zap className="w-4 h-4 inline mr-1" />
-                  +${goldBonus.toFixed(0)} Gold Bonus
+        {/* Earnings Cards - Reordered */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Pending Earnings */}
+          <div className={`${themeClasses.cardBg} ${themeClasses.border} border rounded-lg p-6 bg-gradient-to-br ${darkMode ? 'from-orange-900 to-orange-800' : 'from-orange-50 to-orange-100'}`}>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className={`text-sm font-medium ${darkMode ? 'text-orange-300' : 'text-orange-700'}`}>Pending Payment</p>
+                <p className={`text-2xl font-bold ${darkMode ? 'text-orange-100' : 'text-orange-900'}`}>
+                  ${pendingEarnings.toFixed(0)}
                 </p>
-              )}
+                <p className={`text-sm ${darkMode ? 'text-orange-400' : 'text-orange-600'}`}>
+                  {tabCounts.submitted} tasks submitted
+                </p>
+              </div>
+              <Clock className={`w-8 h-8 ${darkMode ? 'text-orange-400' : 'text-orange-600'}`} />
             </div>
-            <DollarSign className="w-8 h-8 text-blue-600" />
+          </div>
+
+          {/* This Pay Period */}
+          <div className={`${themeClasses.cardBg} ${themeClasses.border} border rounded-lg p-6 bg-gradient-to-br ${darkMode ? 'from-blue-900 to-blue-800' : 'from-blue-50 to-blue-100'}`}>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className={`text-sm font-medium ${darkMode ? 'text-blue-300' : 'text-blue-700'}`}>This Pay Period</p>
+                <p className={`text-2xl font-bold ${darkMode ? 'text-blue-100' : 'text-blue-900'}`}>
+                  ${thisPeriodsEarnings.toFixed(0)}
+                </p>
+                {goldBonus > 0 && (
+                  <p className={`text-sm ${darkMode ? 'text-yellow-400' : 'text-yellow-600'} font-medium`}>
+                    <Zap className="w-4 h-4 inline mr-1" />
+                    +${goldBonus.toFixed(0)} Gold Bonus
+                  </p>
+                )}
+              </div>
+              <DollarSign className={`w-8 h-8 ${darkMode ? 'text-blue-400' : 'text-blue-600'}`} />
+            </div>
+          </div>
+
+          {/* Lifetime Earnings */}
+          <div className={`${themeClasses.cardBg} ${themeClasses.border} border rounded-lg p-6 bg-gradient-to-br ${darkMode ? 'from-green-900 to-green-800' : 'from-green-50 to-green-100'}`}>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className={`text-sm font-medium ${darkMode ? 'text-green-300' : 'text-green-700'}`}>Lifetime Earnings</p>
+                <p className={`text-2xl font-bold ${darkMode ? 'text-green-100' : 'text-green-900'}`}>
+                  ${lifetimeEarnings.toFixed(0)}
+                </p>
+                <p className={`text-sm ${darkMode ? 'text-green-400' : 'text-green-600'}`}>
+                  {tabCounts.paid} completed tasks
+                </p>
+              </div>
+              <TrendingUp className={`w-8 h-8 ${darkMode ? 'text-green-400' : 'text-green-600'}`} />
+            </div>
           </div>
         </div>
 
-        <div className="card p-6 bg-gradient-to-br from-green-50 to-green-100">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-green-700">Lifetime Earnings</p>
-              <p className="text-2xl font-bold text-green-900">
-                ${lifetimeEarnings.toFixed(0)}
-              </p>
-              <p className="text-sm text-green-600">
-                {tabCounts.paid} completed tasks
+        {/* Enhanced Tabs with Black Text for Active */}
+        <div className={`${themeClasses.cardBg} ${themeClasses.border} border rounded-lg p-4`}>
+          <div className="flex space-x-2">
+            {[
+              { key: 'pending', label: 'Pending', count: tabCounts.pending, color: 'blue' },
+              { key: 'submitted', label: 'Submitted', count: tabCounts.submitted, color: 'orange' },
+              { key: 'paid', label: 'Paid', count: tabCounts.paid, color: 'green' }
+            ].map(({ key, label, count, color }) => (
+              <button
+                key={key}
+                onClick={() => setActiveTab(key)}
+                className={`px-6 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  activeTab === key
+                    ? `bg-${color}-600 text-black shadow-lg`
+                    : darkMode 
+                      ? `bg-${color}-900 text-${color}-300 hover:bg-${color}-800`
+                      : `bg-${color}-50 text-${color}-700 hover:bg-${color}-100`
+                }`}
+              >
+                <span>{label}</span>
+                <span className={`ml-2 px-2 py-1 rounded-full text-xs font-bold ${
+                  activeTab === key 
+                    ? 'bg-white bg-opacity-25' 
+                    : darkMode
+                      ? `bg-${color}-800`
+                      : `bg-${color}-200`
+                }`}>
+                  {count}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Tasks List */}
+        <div className="space-y-4">
+          {getTasksForTab(activeTab).length === 0 ? (
+            <div className={`${themeClasses.cardBg} ${themeClasses.border} border rounded-lg p-8 text-center`}>
+              <Calendar className={`w-12 h-12 ${themeClasses.textMuted} mx-auto mb-4`} />
+              <h3 className={`text-lg font-medium ${themeClasses.textPrimary} mb-2`}>No tasks found</h3>
+              <p className={themeClasses.textSecondary}>
+                {activeTab === 'pending' && "No pending tasks assigned yet."}
+                {activeTab === 'submitted' && "No tasks submitted for review."}
+                {activeTab === 'paid' && "No completed tasks paid yet."}
               </p>
             </div>
-            <TrendingUp className="w-8 h-8 text-green-600" />
-          </div>
+          ) : (
+            getTasksForTab(activeTab).map((task) => (
+              <TaskCard 
+                key={task._id} 
+                task={task} 
+                activeTab={activeTab}
+                onSubmit={handleSubmitTask}
+                submitting={submitTaskMutation.isLoading}
+                darkMode={darkMode}
+                themeClasses={themeClasses}
+              />
+            ))
+          )}
         </div>
-
-        <div className="card p-6 bg-gradient-to-br from-orange-50 to-orange-100">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-orange-700">Pending Payment</p>
-              <p className="text-2xl font-bold text-orange-900">
-                ${pendingEarnings.toFixed(0)}
-              </p>
-              <p className="text-sm text-orange-600">
-                {tabCounts.submitted} tasks submitted
-              </p>
-            </div>
-            <Clock className="w-8 h-8 text-orange-600" />
-          </div>
-        </div>
-      </div>
-
-      {/* Enhanced Tabs */}
-      <div className="card p-4">
-        <div className="flex space-x-2">
-          {[
-            { key: 'pending', label: 'Pending', count: tabCounts.pending, color: 'blue' },
-            { key: 'submitted', label: 'Submitted', count: tabCounts.submitted, color: 'orange' },
-            { key: 'paid', label: 'Paid', count: tabCounts.paid, color: 'green' }
-          ].map(({ key, label, count, color }) => (
-            <button
-              key={key}
-              onClick={() => setActiveTab(key)}
-              className={`px-6 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
-                activeTab === key
-                  ? `bg-${color}-600 text-white shadow-lg`
-                  : `bg-${color}-50 text-${color}-700 hover:bg-${color}-100`
-              }`}
-            >
-              <span>{label}</span>
-              <span className={`ml-2 px-2 py-1 rounded-full text-xs font-bold ${
-                activeTab === key 
-                  ? 'bg-white bg-opacity-25' 
-                  : `bg-${color}-200`
-              }`}>
-                {count}
-              </span>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Tasks List */}
-      <div className="space-y-4">
-        {getTasksForTab(activeTab).length === 0 ? (
-          <div className="card p-8 text-center">
-            <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No tasks found</h3>
-            <p className="text-gray-600">
-              {activeTab === 'pending' && "No pending tasks assigned yet."}
-              {activeTab === 'submitted' && "No tasks submitted for review."}
-              {activeTab === 'paid' && "No completed tasks paid yet."}
-            </p>
-          </div>
-        ) : (
-          getTasksForTab(activeTab).map((task) => (
-            <TaskCard 
-              key={task._id} 
-              task={task} 
-              activeTab={activeTab}
-              onSubmit={handleSubmitTask}
-              submitting={submitTaskMutation.isLoading}
-            />
-          ))
-        )}
       </div>
     </div>
   );
 };
 
-const TaskCard = ({ task, activeTab, onSubmit, submitting }) => {
+const TaskCard = ({ task, activeTab, onSubmit, submitting, darkMode, themeClasses }) => {
   const getStatusBadge = () => {
     if (task.status === 'completed') return 'badge-success';
     if (task.status === 'submitted') return 'badge-warning';
@@ -360,16 +401,16 @@ const TaskCard = ({ task, activeTab, onSubmit, submitting }) => {
   };
 
   return (
-    <div className={`card p-6 hover:shadow-lg transition-shadow ${isOverdue() ? 'border-l-4 border-red-500' : ''}`}>
+    <div className={`${themeClasses.cardBg} ${themeClasses.border} border rounded-lg p-6 hover:shadow-lg transition-shadow ${isOverdue() ? 'border-l-4 border-red-500' : ''}`}>
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
         <div className="flex-1">
           <div className="flex items-start justify-between mb-3">
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-1">
+              <h3 className={`text-lg font-semibold ${themeClasses.textPrimary} mb-1`}>
                 {task.title}
                 {isOverdue() && <span className="ml-2 text-red-500 text-sm">⚠️ Overdue</span>}
               </h3>
-              <div className="flex items-center space-x-4 text-sm text-gray-600">
+              <div className={`flex items-center space-x-4 text-sm ${themeClasses.textSecondary}`}>
                 <span>Task ID: {task.taskId}</span>
                 <span>•</span>
                 <span className="capitalize">{task.paintingStyle?.replace('_', ' ')}</span>
@@ -382,25 +423,25 @@ const TaskCard = ({ task, activeTab, onSubmit, submitting }) => {
           </div>
 
           {task.description && (
-            <p className="text-gray-700 mb-4">{task.description}</p>
+            <p className={`${themeClasses.textSecondary} mb-4`}>{task.description}</p>
           )}
 
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
             <div className="flex items-center space-x-2">
-              <Calendar className="w-4 h-4 text-gray-400" />
+              <Calendar className={`w-4 h-4 ${themeClasses.textMuted}`} />
               <div>
-                <p className="text-xs text-gray-500">Due Date</p>
-                <p className="text-sm font-medium text-gray-900">
+                <p className={`text-xs ${themeClasses.textMuted}`}>Due Date</p>
+                <p className={`text-sm font-medium ${themeClasses.textPrimary}`}>
                   {new Date(task.dueDate).toLocaleDateString()}
                 </p>
               </div>
             </div>
             
             <div className="flex items-center space-x-2">
-              <DollarSign className="w-4 h-4 text-gray-400" />
+              <DollarSign className={`w-4 h-4 ${themeClasses.textMuted}`} />
               <div>
-                <p className="text-xs text-gray-500">Pay Rate</p>
-                <p className="text-sm font-medium text-gray-900">
+                <p className={`text-xs ${themeClasses.textMuted}`}>Pay Rate</p>
+                <p className={`text-sm font-medium ${themeClasses.textPrimary}`}>
                   ${task.payRate}
                 </p>
               </div>
@@ -408,8 +449,8 @@ const TaskCard = ({ task, activeTab, onSubmit, submitting }) => {
             
             <div className="flex items-center space-x-2">
               <span className={`text-sm font-medium capitalize ${
-                task.priority === 'urgent' ? 'text-danger-600' :
-                task.priority === 'high' ? 'text-warning-600' : 'text-gray-900'
+                task.priority === 'urgent' ? 'text-red-600' :
+                task.priority === 'high' ? 'text-yellow-600' : themeClasses.textPrimary
               }`}>
                 {task.priority} priority
               </span>
