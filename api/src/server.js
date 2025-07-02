@@ -96,3 +96,40 @@ app.listen(PORT, '0.0.0.0', () => {
 });
 
 module.exports = app;
+
+// Setup endpoint to create demo accounts
+app.get('/setup-demo', async (req, res) => {
+  try {
+    const User = require('./models/User');
+    
+    // Create artist demo account
+    const artistExists = await User.findOne({ email: 'artist@riverry.com' });
+    if (!artistExists) {
+      const artist = new User({
+        email: 'artist@riverry.com',
+        password: 'demo123',
+        firstName: 'Demo',
+        lastName: 'Artist',
+        role: 'artist'
+      });
+      await artist.save();
+    }
+    
+    // Create admin demo account
+    const adminExists = await User.findOne({ email: 'admin@riverry.com' });
+    if (!adminExists) {
+      const admin = new User({
+        email: 'admin@riverry.com',
+        password: 'demo123',
+        firstName: 'Demo',
+        lastName: 'Admin',
+        role: 'admin'
+      });
+      await admin.save();
+    }
+    
+    res.json({ success: true, message: 'Demo accounts created!' });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
