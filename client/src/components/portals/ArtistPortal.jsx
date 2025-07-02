@@ -17,13 +17,15 @@ import {
   Package,
   Palette,
   Upload,
-  FileText
+  FileText,
+  LogOut,
+  User
 } from 'lucide-react';
 import { tasksAPI } from '../../services/api';
 import { useAuth } from '../../hooks/useAuth';
 
 const ArtistPortal = () => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('pending');
   const [darkMode, setDarkMode] = useState(false);
@@ -237,6 +239,11 @@ const ArtistPortal = () => {
     // Submit all tasks in the order
   };
 
+  const handleLogout = () => {
+    logout();
+    window.location.href = '/login';
+  };
+
   // Theme classes
   const themeClasses = {
     bg: darkMode ? 'bg-gray-900' : 'bg-gray-50',
@@ -253,7 +260,7 @@ const ArtistPortal = () => {
   return (
     <div className={`min-h-screen ${themeClasses.bg} transition-colors duration-300`}>
       <div className="p-6 max-w-7xl mx-auto space-y-6">
-        {/* Header with Theme Toggle */}
+        {/* Header with User Info and Logout */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className={`text-3xl font-bold ${themeClasses.textPrimary}`}>
@@ -264,17 +271,47 @@ const ArtistPortal = () => {
             </p>
           </div>
           
-          {/* Theme Toggle */}
-          <button
-            onClick={() => setDarkMode(!darkMode)}
-            className={`mt-4 sm:mt-0 p-3 rounded-full ${themeClasses.cardBg} ${themeClasses.border} border hover:shadow-lg transition-all duration-200`}
-          >
-            {darkMode ? (
-              <Sun className={`w-5 h-5 ${themeClasses.textPrimary}`} />
-            ) : (
-              <Moon className={`w-5 h-5 ${themeClasses.textPrimary}`} />
-            )}
-          </button>
+          {/* User Actions */}
+          <div className="flex items-center space-x-4 mt-4 sm:mt-0">
+            {/* Theme Toggle */}
+            <button
+              onClick={() => setDarkMode(!darkMode)}
+              className={`p-3 rounded-full ${themeClasses.cardBg} ${themeClasses.border} border hover:shadow-lg transition-all duration-200`}
+            >
+              {darkMode ? (
+                <Sun className={`w-5 h-5 ${themeClasses.textPrimary}`} />
+              ) : (
+                <Moon className={`w-5 h-5 ${themeClasses.textPrimary}`} />
+              )}
+            </button>
+
+            {/* User Menu */}
+            <div className={`flex items-center space-x-3 ${themeClasses.cardBg} ${themeClasses.border} border rounded-lg p-3`}>
+              <div className="flex items-center space-x-2">
+                <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                  <span className="text-white text-sm font-bold">
+                    {user?.firstName?.charAt(0) || 'U'}
+                  </span>
+                </div>
+                <div className="hidden sm:block">
+                  <p className={`text-sm font-medium ${themeClasses.textPrimary}`}>
+                    {user?.firstName} {user?.lastName}
+                  </p>
+                  <p className={`text-xs ${themeClasses.textMuted} capitalize`}>
+                    {user?.role} Account
+                  </p>
+                </div>
+              </div>
+              
+              <button
+                onClick={handleLogout}
+                className={`p-2 hover:bg-red-50 hover:text-red-600 rounded-lg transition-colors ${themeClasses.textMuted}`}
+                title="Logout"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Artist Status Card */}
