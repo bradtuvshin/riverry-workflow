@@ -4,7 +4,27 @@ const AuthContext = React.createContext();
 
 export function AuthProvider({ children }) {
   const [user, setUser] = React.useState(null);
-  const [loading, setLoading] = React.useState(false);
+  const [loading, setLoading] = React.useState(true);
+  
+  // Initialize auth state on component mount
+  React.useEffect(() => {
+    try {
+      const token = localStorage.getItem('token');
+      const storedUser = localStorage.getItem('user');
+      
+      if (token && storedUser) {
+        const userData = JSON.parse(storedUser);
+        setUser(userData);
+        console.log('User restored from localStorage:', userData);
+      }
+    } catch (error) {
+      console.error('Error restoring auth state:', error);
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
   
   const login = async (credentials) => {
     try {
@@ -19,15 +39,20 @@ export function AuthProvider({ children }) {
       });
       
       const data = await response.json();
+      console.log('Login response:', data);
       
       if (data.success) {
-        setUser(data.data.user);
-        localStorage.setItem('token', data.data.token);
-        localStorage.setItem('user', JSON.stringify(data.data.user));
+        const userData = data.data.user;
+        const token = data.data.token;
         
-        // Don't auto-redirect for now - let the app handle routing
-        return { success: true, user: data.data.user };
+        setUser(userData);
+        localStorage.setItem('token', token);
+        localStorage.setItem('user', JSON.stringify(userData));
+        
+        console.log('User logged in:', userData);
+        return { success: true, user: userData };
       } else {
+        console.log('Login failed:', data.message);
         return { success: false, message: data.message };
       }
     } catch (error) {
@@ -42,6 +67,7 @@ export function AuthProvider({ children }) {
     setUser(null);
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    console.log('User logged out');
   };
   
   const hasRole = (requiredRole) => {
@@ -65,5 +91,9 @@ export function AuthProvider({ children }) {
 }
 
 export function useAuth() {
-  return React.useContext(AuthContext);
+  const context = React.useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 }
