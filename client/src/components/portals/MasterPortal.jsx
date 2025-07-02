@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import SKUManagement from './SKUManagement';
+import UserManagement from './UserManagement';
 
 const MasterPortal = () => {
   const { user, logout } = useAuth();
@@ -362,19 +363,6 @@ const KPICard = ({ title, value, change, icon: Icon, color, themeClasses }) => {
 };
 
 // Placeholder components for other sections
-const UserManagement = ({ themeClasses }) => (
-  <div className={`${themeClasses.cardBg} ${themeClasses.border} border rounded-lg p-6`}>
-    <div className="flex items-center justify-between mb-6">
-      <h2 className={`text-xl font-semibold ${themeClasses.textPrimary}`}>User Management</h2>
-      <button className="btn btn-primary">
-        <Plus className="w-4 h-4 mr-2" />
-        Add User
-      </button>
-    </div>
-    <p className={themeClasses.textSecondary}>User management interface coming soon...</p>
-  </div>
-);
-
 const OrderManagement = ({ themeClasses }) => (
   <div className={`${themeClasses.cardBg} ${themeClasses.border} border rounded-lg p-6`}>
     <div className="flex items-center justify-between mb-6">
