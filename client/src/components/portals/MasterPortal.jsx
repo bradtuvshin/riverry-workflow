@@ -27,6 +27,7 @@ import {
   Filter
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
+import SKUManagement from './SKUManagement';
 
 const MasterPortal = () => {
   const { user, logout } = useAuth();
@@ -53,6 +54,11 @@ const MasterPortal = () => {
     { id: 'integrations', label: 'Integrations', icon: RefreshCw },
     { id: 'settings', label: 'System Settings', icon: Settings }
   ];
+
+  const handleLogout = () => {
+    logout();
+    window.location.href = '/login';
+  };
 
   const themeClasses = {
     bg: darkMode ? 'bg-gray-900' : 'bg-gray-50',
@@ -169,7 +175,7 @@ const MasterPortal = () => {
                 </div>
               </div>
               <button
-                onClick={logout}
+                onClick={handleLogout}
                 className={`w-full flex items-center space-x-2 px-3 py-2 ${themeClasses.textSecondary} hover:bg-red-50 hover:text-red-600 rounded-lg transition-colors`}
               >
                 <LogOut className="w-4 h-4" />
@@ -366,25 +372,6 @@ const UserManagement = ({ themeClasses }) => (
       </button>
     </div>
     <p className={themeClasses.textSecondary}>User management interface coming soon...</p>
-  </div>
-);
-
-const SKUManagement = ({ themeClasses }) => (
-  <div className={`${themeClasses.cardBg} ${themeClasses.border} border rounded-lg p-6`}>
-    <div className="flex items-center justify-between mb-6">
-      <h2 className={`text-xl font-semibold ${themeClasses.textPrimary}`}>SKU Management</h2>
-      <div className="flex space-x-2">
-        <button className="btn btn-secondary">
-          <Upload className="w-4 h-4 mr-2" />
-          Import CSV
-        </button>
-        <button className="btn btn-primary">
-          <Plus className="w-4 h-4 mr-2" />
-          Add SKU
-        </button>
-      </div>
-    </div>
-    <p className={themeClasses.textSecondary}>SKU management interface coming soon...</p>
   </div>
 );
 
