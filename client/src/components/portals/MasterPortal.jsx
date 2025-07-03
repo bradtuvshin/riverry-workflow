@@ -29,6 +29,7 @@ import {
 import { useAuth } from '../../hooks/useAuth';
 import SKUManagement from './SKUManagement';
 import UserManagement from './UserManagement';
+import OrderManagement from './OrderManagement';
 
 const MasterPortal = () => {
   const { user, logout } = useAuth();
