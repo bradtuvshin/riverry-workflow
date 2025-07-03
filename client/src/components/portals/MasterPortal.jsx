@@ -364,7 +364,6 @@ const KPICard = ({ title, value, change, icon: Icon, color, themeClasses }) => {
 };
 
 // Placeholder components for other sections
-const OrderManagement = ({ themeClasses }) => (
   <div className={`${themeClasses.cardBg} ${themeClasses.border} border rounded-lg p-6`}>
     <div className="flex items-center justify-between mb-6">
       <h2 className={`text-xl font-semibold ${themeClasses.textPrimary}`}>Order Management</h2>
