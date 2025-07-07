@@ -176,106 +176,54 @@ const OrderManagement = ({ themeClasses }) => {
       
       if (data.success) {
         // Transform Shopify orders to our workflow format
-        const transformedOrders = data.orders.map(shopifyOrder => {
-          // Check if order already exists with manual changes
-          const existingOrder = orders.find(o => o.shopifyOrderId === shopifyOrder.id.toString());
-          
-          const baseOrder = {
-            id: shopifyOrder.id.toString(),
-            shopifyOrderId: shopifyOrder.id.toString(),
-            shopifyOrderNumber: shopifyOrder.name,
-            customerName: shopifyOrder.customer ? 
-              `${shopifyOrder.customer.first_name || ""} ${shopifyOrder.customer.last_name || ""}`.trim() : 
-              "Unknown Customer",
-            customerEmail: shopifyOrder.customer?.email || shopifyOrder.email || "",
-            totalAmount: parseFloat(shopifyOrder.total_price || 0),
-            createdAt: shopifyOrder.created_at,
-            dueDate: calculateDueDate(shopifyOrder.created_at),
-            fulfillByDate: extractFulfillByDate(shopifyOrder),
-            priority: determinePriority(shopifyOrder),
-            fulfillmentType: determineFulfillmentType(shopifyOrder),
-            shippingAddress: {
-              name: shopifyOrder.shipping_address?.name || 
-                    (shopifyOrder.customer ? `${shopifyOrder.customer.first_name} ${shopifyOrder.customer.last_name}` : ""),
-              address1: shopifyOrder.shipping_address?.address1 || "",
-              city: shopifyOrder.shipping_address?.city || "",
-              province: shopifyOrder.shipping_address?.province || "",
-              zip: shopifyOrder.shipping_address?.zip || "",
-              country: shopifyOrder.shipping_address?.country || ""
-            },
-            customerNotes: shopifyOrder.note || "",
-            tags: shopifyOrder.tags ? shopifyOrder.tags.split(",").map(tag => tag.trim()) : [],
-            lastSyncedAt: new Date().toISOString()
-          };
-          
-          // If order exists, preserve manual changes but update Shopify data
-          if (existingOrder) {
-            return {
-              ...baseOrder,
-              status: existingOrder.status, // Preserve manual status changes
-              items: shopifyOrder.line_items?.map(item => {
-                const existingItem = existingOrder.items?.find(ei => ei.sku === (item.sku || `shopify-${item.product_id || "unknown"}`));
-                const baseItem = {
-                  id: `${shopifyOrder.id}-${item.id || Math.random()}`,
-                  productTitle: item.title || item.name || "Unknown Product",
-                  sku: item.sku || `shopify-${item.product_id || "unknown"}`,
-                  paintingStyle: getPaintingStyleFromTitle(item.title || ""),
-                  quantity: item.quantity || 1,
-                  price: parseFloat(item.price || 0),
-                  customerNotes: getCustomerNotes(item, shopifyOrder),
-                  isDigital: isDigitalProduct(item),
-                  isAddOn: isAddOnItem(item)
-                };
-                
-                // Preserve manual assignments
-                if (existingItem) {
-                  return {
-                    ...baseItem,
-                    assignedArtist: existingItem.assignedArtist,
-                    status: existingItem.status
-                  };
-                }
-                
-                return {
-                  ...baseItem,
-                  assignedArtist: null,
-                  status: "unassigned"
-                };
-              }) || [],
-              workflowHistory: existingOrder.workflowHistory || [{
-                status: "waiting_for_photos",
-                timestamp: shopifyOrder.created_at,
-                user: "System",
-                notes: "Order received from Shopify"
-              }]
-            };
-          }
-          
-          // New order
-          return {
-            ...baseOrder,
-            status: determineWorkflowStatus(shopifyOrder),
-            items: shopifyOrder.line_items?.map(item => ({
-              id: `${shopifyOrder.id}-${item.id || Math.random()}`,
-              productTitle: item.title || item.name || "Unknown Product",
-              sku: item.sku || `shopify-${item.product_id || "unknown"}`,
-              paintingStyle: getPaintingStyleFromTitle(item.title || ""),
-              quantity: item.quantity || 1,
-              price: parseFloat(item.price || 0),
-              assignedArtist: null,
-              status: "unassigned",
-              customerNotes: getCustomerNotes(item, shopifyOrder),
-              isDigital: isDigitalProduct(item),
-              isAddOn: isAddOnItem(item)
-            })) || [],
-            workflowHistory: [{
-              status: "waiting_for_photos",
+        const transformedOrders = data.orders.map(shopifyOrder => ({
+          id: shopifyOrder.id.toString(),
+          shopifyOrderId: shopifyOrder.id.toString(),
+          shopifyOrderNumber: shopifyOrder.name,
+          customerName: shopifyOrder.customer ? 
+            `${shopifyOrder.customer.first_name || ''} ${shopifyOrder.customer.last_name || ''}`.trim() : 
+            'Unknown Customer',
+          customerEmail: shopifyOrder.customer?.email || shopifyOrder.email || '',
+          status: determineWorkflowStatus(shopifyOrder),
+          totalAmount: parseFloat(shopifyOrder.total_price || 0),
+          createdAt: shopifyOrder.created_at,
+          dueDate: calculateDueDate(shopifyOrder.created_at),
+          fulfillByDate: extractFulfillByDate(shopifyOrder),          priority: determinePriority(shopifyOrder),
+          fulfillmentType: determineFulfillmentType(shopifyOrder),
+          items: shopifyOrder.line_items?.map(item => ({
+            id: `${shopifyOrder.id}-${item.id || Math.random()}`,
+            productTitle: item.title || item.name || 'Unknown Product',
+            sku: item.sku || `shopify-${item.product_id || 'unknown'}`,
+            paintingStyle: getPaintingStyleFromTitle(item.title || ''),
+            quantity: item.quantity || 1,
+            price: parseFloat(item.price || 0),
+            assignedArtist: null,
+            status: 'unassigned',
+            customerNotes: getCustomerNotes(item, shopifyOrder),
+            isDigital: isDigitalProduct(item)
+          })) || [],
+          shippingAddress: {
+            name: shopifyOrder.shipping_address?.name || 
+                  (shopifyOrder.customer ? `${shopifyOrder.customer.first_name} ${shopifyOrder.customer.last_name}` : ''),
+            address1: shopifyOrder.shipping_address?.address1 || '',
+            city: shopifyOrder.shipping_address?.city || '',
+            province: shopifyOrder.shipping_address?.province || '',
+            zip: shopifyOrder.shipping_address?.zip || '',
+            country: shopifyOrder.shipping_address?.country || ''
+          },
+          customerNotes: shopifyOrder.note || '',
+          tags: shopifyOrder.tags ? shopifyOrder.tags.split(',').map(tag => tag.trim()) : [],
+          lastSyncedAt: new Date().toISOString(),
+          workflowHistory: [
+            {
+              status: 'waiting_for_photos',
               timestamp: shopifyOrder.created_at,
-              user: "System",
-              notes: "Order received from Shopify"
-            }]
-          };
-        });        
+              user: 'System',
+              notes: 'Order received from Shopify'
+            }
+          ]
+        }));
+        
         setOrders(transformedOrders);
         setLastSyncTime(new Date().toISOString());
       } else {
@@ -1407,61 +1355,16 @@ const ItemsAssignmentTab = ({ order, availableArtists, selectedArtists, onArtist
       ))}
     </div>
 
-              {/* Smart Assignment */}
-              {getPaintableItems(order.items).length > 0 && (
-                <div className={`${themeClasses.border} border rounded-lg p-4 bg-yellow-50`}>
-                  <h4 className="font-medium text-yellow-800 mb-3">🎯 Smart Assignment</h4>
-                  <p className="text-sm text-yellow-700 mb-3">
-                    Assign <strong>{getPaintableItems(order.items).length} paintable items</strong> to artist (add-ons excluded automatically)
-                  </p>
-                  <div className="flex items-center space-x-3">
-                    <select className="flex-1 px-3 py-2 border border-yellow-300 rounded-lg text-sm bg-white">
-                      <option value="">Select artist for all paintable items...</option>
-                      {availableArtists.map((artist) => (
-                        <option key={artist.id} value={artist.name}>
-                          {artist.name} ({artist.onTimeRate}% on-time) - {artist.speciality}
-                        </option>
-                      ))}
-                    </select>
-                    <button className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 font-medium text-sm">
-                      🎯 Assign All Paintable
-                    </button>
-                    <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-medium text-sm">
-                      ⚡ Split Assignment
-                    </button>
-                  </div>
-                  <p className="text-xs text-yellow-700 mt-2">
-                    💡 Add-on items are automatically excluded from assignment
-                  </p>
-                </div>
-              )}              {/* Smart Assignment */}
-              {getPaintableItems(order.items).length > 0 && (
-                <div className={`${themeClasses.border} border rounded-lg p-4 bg-yellow-50`}>
-                  <h4 className="font-medium text-yellow-800 mb-3">🎯 Smart Assignment</h4>
-                  <p className="text-sm text-yellow-700 mb-3">
-                    Assign <strong>{getPaintableItems(order.items).length} paintable items</strong> to artist (add-ons excluded automatically)
-                  </p>
-                  <div className="flex items-center space-x-3">
-                    <select className="flex-1 px-3 py-2 border border-yellow-300 rounded-lg text-sm bg-white">
-                      <option value="">Select artist for all paintable items...</option>
-                      {availableArtists.map((artist) => (
-                        <option key={artist.id} value={artist.name}>
-                          {artist.name} ({artist.onTimeRate}% on-time) - {artist.speciality}
-                        </option>
-                      ))}
-                    </select>
-                    <button className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 font-medium text-sm">
-                      🎯 Assign All Paintable
-                    </button>
-                    <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-medium text-sm">
-                      ⚡ Split Assignment
-                    </button>
-                  </div>
-                  <p className="text-xs text-yellow-700 mt-2">
-                    💡 Add-on items are automatically excluded from assignment
-                  </p>
-                </div>
-              )}                {artist.name} ({artist.onTimeRate}% on-time) - {artist.speciality}
+    {/* Bulk Assignment */}
+    {order.items.some(item => !item.assignedArtist) && (
+      <div className={`${themeClasses.border} border rounded-lg p-4 bg-yellow-50`}>
+        <h4 className="font-medium text-yellow-800 mb-3">Bulk Assignment</h4>
+        <div className="flex items-center space-x-3">
+          <select className="flex-1 px-3 py-2 border border-yellow-300 rounded-lg text-sm">
+            <option value="">Assign all unassigned items to...</option>
+            {availableArtists.map((artist) => (
+              <option key={artist.id} value={artist.name}>
+                {artist.name} ({artist.onTimeRate}% on-time) - {artist.speciality}
               </option>
             ))}
           </select>
